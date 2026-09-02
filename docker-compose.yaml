@@ -51,18 +51,18 @@ services:
           # Custom entrypoint for Kong that builds Lua expressions for request-transformer
           # and performs environment variable substitution in the declarative config.
 
-          if [ -n "$$SUPABASE_SECRET_KEY" ] && [ -n "$$SUPABASE_PUBLISHABLE_KEY" ]; then
-              export LUA_AUTH_EXPR="\$$((headers.authorization ~= nil and headers.authorization:sub(1, 10) ~= 'Bearer sb_' and headers.authorization) or (headers.apikey == '$$SUPABASE_SECRET_KEY' and 'Bearer $$SERVICE_ROLE_KEY_ASYMMETRIC') or (headers.apikey == '$$SUPABASE_PUBLISHABLE_KEY' and 'Bearer $$ANON_KEY_ASYMMETRIC') or headers.apikey)"
-              export LUA_RT_WS_EXPR="\$$((query_params.apikey == '$$SUPABASE_SECRET_KEY' and '$$SERVICE_ROLE_KEY_ASYMMETRIC') or (query_params.apikey == '$$SUPABASE_PUBLISHABLE_KEY' and '$$ANON_KEY_ASYMMETRIC') or query_params.apikey)"
+          if [ -n "$SUPABASE_SECRET_KEY" ] && [ -n "$SUPABASE_PUBLISHABLE_KEY" ]; then
+              export LUA_AUTH_EXPR="\$((headers.authorization ~= nil and headers.authorization:sub(1, 10) ~= 'Bearer sb_' and headers.authorization) or (headers.apikey == '$SUPABASE_SECRET_KEY' and 'Bearer $SERVICE_ROLE_KEY_ASYMMETRIC') or (headers.apikey == '$SUPABASE_PUBLISHABLE_KEY' and 'Bearer $ANON_KEY_ASYMMETRIC') or headers.apikey)"
+              export LUA_RT_WS_EXPR="\$((query_params.apikey == '$SUPABASE_SECRET_KEY' and '$SERVICE_ROLE_KEY_ASYMMETRIC') or (query_params.apikey == '$SUPABASE_PUBLISHABLE_KEY' and '$ANON_KEY_ASYMMETRIC') or query_params.apikey)"
           else
-              export LUA_AUTH_EXPR="\$$((headers.authorization ~= nil and headers.authorization:sub(1, 10) ~= 'Bearer sb_' and headers.authorization) or headers.apikey)"
-              export LUA_RT_WS_EXPR="\$$(query_params.apikey)"
+              export LUA_AUTH_EXPR="\$((headers.authorization ~= nil and headers.authorization:sub(1, 10) ~= 'Bearer sb_' and headers.authorization) or headers.apikey)"
+              export LUA_RT_WS_EXPR="\$(query_params.apikey)"
           fi
 
           awk '{
             result = ""
-            rest = $$0
-            while (match(rest, /\$$[A-Za-z_][A-Za-z_0-9]*/)) {
+            rest = $0
+            while (match(rest, /\$[A-Za-z_][A-Za-z_0-9]*/)) {
               varname = substr(rest, RSTART + 1, RLENGTH - 1)
               if (varname in ENVIRON) {
                 result = result substr(rest, 1, RSTART - 1) ENVIRON[varname]
@@ -72,9 +72,9 @@ services:
               rest = substr(rest, RSTART + RLENGTH)
             }
             print result rest
-          }' /home/kong/temp.yml > "$$KONG_DECLARATIVE_CONFIG"
+          }' /home/kong/temp.yml > "$KONG_DECLARATIVE_CONFIG"
 
-          sed -i '/^[[:space:]]*- key:[[:space:]]*$$/d' "$$KONG_DECLARATIVE_CONFIG"
+          sed -i '/^[[:space:]]*- key:[[:space:]]*$/d' "$KONG_DECLARATIVE_CONFIG"
 
           exec /entrypoint.sh kong docker-start
       - type: bind
@@ -91,12 +91,12 @@ services:
             - username: DASHBOARD
             - username: anon
               keyauth_credentials:
-                - key: $$SUPABASE_ANON_KEY
-                - key: $$SUPABASE_PUBLISHABLE_KEY
+                - key: $SUPABASE_ANON_KEY
+                - key: $SUPABASE_PUBLISHABLE_KEY
             - username: service_role
               keyauth_credentials:
-                - key: $$SUPABASE_SERVICE_KEY
-                - key: $$SUPABASE_SECRET_KEY
+                - key: $SUPABASE_SERVICE_KEY
+                - key: $SUPABASE_SECRET_KEY
 
           ###
           ### Access Control List
@@ -112,8 +112,8 @@ services:
           ###
           basicauth_credentials:
           - consumer: DASHBOARD
-            username: '$$DASHBOARD_USERNAME'
-            password: '$$DASHBOARD_PASSWORD'
+            username: '$DASHBOARD_USERNAME'
+            password: '$DASHBOARD_PASSWORD'
 
 
           ###
@@ -198,10 +198,10 @@ services:
                   config:
                     add:
                       headers:
-                        - "Authorization: $$LUA_AUTH_EXPR"
+                        - "Authorization: $LUA_AUTH_EXPR"
                     replace:
                       headers:
-                        - "Authorization: $$LUA_AUTH_EXPR"
+                        - "Authorization: $LUA_AUTH_EXPR"
                 - name: acl
                   config:
                     hide_groups_header: true
@@ -227,10 +227,10 @@ services:
                   config:
                     add:
                       headers:
-                        - "Authorization: $$LUA_AUTH_EXPR"
+                        - "Authorization: $LUA_AUTH_EXPR"
                     replace:
                       headers:
-                        - "Authorization: $$LUA_AUTH_EXPR"
+                        - "Authorization: $LUA_AUTH_EXPR"
                 - name: acl
                   config:
                     hide_groups_header: true
@@ -257,11 +257,11 @@ services:
                     add:
                       headers:
                         - "Content-Profile: graphql_public"
-                        - "Authorization: $$LUA_AUTH_EXPR"
+                        - "Authorization: $LUA_AUTH_EXPR"
                     replace:
                       headers:
                         - "Content-Profile: graphql_public"
-                        - "Authorization: $$LUA_AUTH_EXPR"
+                        - "Authorization: $LUA_AUTH_EXPR"
                 - name: acl
                   config:
                     hide_groups_header: true
@@ -288,10 +288,10 @@ services:
                   config:
                     add:
                       querystring:
-                        - "apikey: $$LUA_RT_WS_EXPR"
+                        - "apikey: $LUA_RT_WS_EXPR"
                     replace:
                       querystring:
-                        - "apikey: $$LUA_RT_WS_EXPR"
+                        - "apikey: $LUA_RT_WS_EXPR"
                 - name: acl
                   config:
                     hide_groups_header: true
@@ -316,10 +316,10 @@ services:
                   config:
                     add:
                       headers:
-                        - "Authorization: $$LUA_AUTH_EXPR"
+                        - "Authorization: $LUA_AUTH_EXPR"
                     replace:
                       headers:
-                        - "Authorization: $$LUA_AUTH_EXPR"
+                        - "Authorization: $LUA_AUTH_EXPR"
                 - name: acl
                   config:
                     hide_groups_header: true
@@ -331,17 +331,17 @@ services:
             ## No key-auth - S3 protocol requests don't carry an apikey header.
             - name: storage-v1
               _comment: 'Storage: /storage/v1/* -> http://supabase-storage:5000/*'
-              connect_timeout: $$KONG_STORAGE_CONNECT_TIMEOUT
-              write_timeout: $$KONG_STORAGE_WRITE_TIMEOUT
-              read_timeout: $$KONG_STORAGE_READ_TIMEOUT
+              connect_timeout: $KONG_STORAGE_CONNECT_TIMEOUT
+              write_timeout: $KONG_STORAGE_WRITE_TIMEOUT
+              read_timeout: $KONG_STORAGE_READ_TIMEOUT
               url: http://supabase-storage:5000/
               routes:
                 - name: storage-v1-all
                   strip_path: true
                   paths:
                     - /storage/v1/
-                  request_buffering: $$KONG_STORAGE_REQUEST_BUFFERING
-                  response_buffering: $$KONG_STORAGE_RESPONSE_BUFFERING
+                  request_buffering: $KONG_STORAGE_REQUEST_BUFFERING
+                  response_buffering: $KONG_STORAGE_RESPONSE_BUFFERING
               plugins:
                 - name: cors
                 - name: post-function
@@ -349,7 +349,7 @@ services:
                     access:
                       - |
                         local auth = kong.request.get_header("authorization")
-                        if auth == nil or auth == "" or auth:find("^%s*$$") then
+                        if auth == nil or auth == "" or auth:find("^%s*$") then
                           kong.service.request.clear_header("authorization")
                         end
 
@@ -543,7 +543,7 @@ services:
         source: ./.coolify-config/db/realtime.sql
         target: /docker-entrypoint-initdb.d/migrations/99-realtime.sql
         content: |
-          \set pguser `echo "$$POSTGRES_USER"`
+          \set pguser `echo "$POSTGRES_USER"`
 
           create schema if not exists _realtime;
           alter schema _realtime owner to :pguser;
@@ -551,14 +551,14 @@ services:
         source: ./.coolify-config/db/_supabase.sql
         target: /docker-entrypoint-initdb.d/migrations/97-_supabase.sql
         content: |
-          \set pguser `echo "$$POSTGRES_USER"`
+          \set pguser `echo "$POSTGRES_USER"`
 
           CREATE DATABASE _supabase WITH OWNER :pguser;
       - type: bind
         source: ./.coolify-config/db/pooler.sql
         target: /docker-entrypoint-initdb.d/migrations/99-pooler.sql
         content: |
-          \set pguser `echo "$$POSTGRES_USER"`
+          \set pguser `echo "$POSTGRES_USER"`
           \c _supabase
           create schema if not exists _supavisor;
           alter schema _supavisor owner to :pguser;
@@ -597,7 +597,7 @@ services:
           CREATE FUNCTION supabase_functions.http_request()
             RETURNS trigger
             LANGUAGE plpgsql
-            AS $$function$$
+            AS $function$
             DECLARE
               request_id bigint;
               payload jsonb;
@@ -668,10 +668,10 @@ services:
 
               RETURN NEW;
             END
-          $$function$$;
+          $function$;
           -- Supabase super admin
           DO
-          $$$$
+          $$
           BEGIN
             IF NOT EXISTS (
               SELECT 1
@@ -682,7 +682,7 @@ services:
               CREATE USER supabase_functions_admin NOINHERIT CREATEROLE LOGIN NOREPLICATION;
             END IF;
           END
-          $$$$;
+          $$;
           GRANT ALL PRIVILEGES ON SCHEMA supabase_functions TO supabase_functions_admin;
           GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA supabase_functions TO supabase_functions_admin;
           GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA supabase_functions TO supabase_functions_admin;
@@ -693,7 +693,7 @@ services:
           GRANT supabase_functions_admin TO postgres;
           -- Remove unused supabase_pg_net_admin role
           DO
-          $$$$
+          $$
           BEGIN
             IF EXISTS (
               SELECT 1
@@ -706,10 +706,10 @@ services:
               DROP ROLE supabase_pg_net_admin;
             END IF;
           END
-          $$$$;
+          $$;
           -- pg_net grants when extension is already enabled
           DO
-          $$$$
+          $$
           BEGIN
             IF EXISTS (
               SELECT 1
@@ -728,12 +728,12 @@ services:
               GRANT EXECUTE ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
             END IF;
           END
-          $$$$;
+          $$;
           -- Event trigger for pg_net
           CREATE OR REPLACE FUNCTION extensions.grant_pg_net_access()
           RETURNS event_trigger
           LANGUAGE plpgsql
-          AS $$$$
+          AS $$
           BEGIN
             IF EXISTS (
               SELECT 1
@@ -754,10 +754,10 @@ services:
               GRANT EXECUTE ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
             END IF;
           END;
-          $$$$;
+          $$;
           COMMENT ON FUNCTION extensions.grant_pg_net_access IS 'Grants access to pg_net';
           DO
-          $$$$
+          $$
           BEGIN
             IF NOT EXISTS (
               SELECT 1
@@ -768,7 +768,7 @@ services:
               EXECUTE PROCEDURE extensions.grant_pg_net_access();
             END IF;
           END
-          $$$$;
+          $$;
           INSERT INTO supabase_functions.migrations (version) VALUES ('20210809183423_update_grants');
           ALTER function supabase_functions.http_request() SECURITY DEFINER;
           ALTER function supabase_functions.http_request() SET search_path = supabase_functions;
@@ -780,7 +780,7 @@ services:
         target: /docker-entrypoint-initdb.d/init-scripts/99-roles.sql
         content: |
           -- NOTE: change to your own passwords for production environments
-           \set pgpass `echo "$$POSTGRES_PASSWORD"`
+           \set pgpass `echo "$POSTGRES_PASSWORD"`
 
            ALTER USER authenticator WITH PASSWORD :'pgpass';
            ALTER USER pgbouncer WITH PASSWORD :'pgpass';
@@ -791,9 +791,9 @@ services:
         source: ./.coolify-config/db/jwt.sql
         target: /docker-entrypoint-initdb.d/init-scripts/99-jwt.sql
         content: |
-          \set jwt_secret `echo "$$JWT_SECRET"`
-          \set jwt_exp `echo "$$JWT_EXP"`
-          \set db_name `echo "$${POSTGRES_DB:-postgres}"`
+          \set jwt_secret `echo "$JWT_SECRET"`
+          \set jwt_exp `echo "$JWT_EXP"`
+          \set db_name `echo "${POSTGRES_DB:-postgres}"`
 
           ALTER DATABASE :db_name SET "app.settings.jwt_secret" TO :'jwt_secret';
           ALTER DATABASE :db_name SET "app.settings.jwt_exp" TO :'jwt_exp';
@@ -801,7 +801,7 @@ services:
         source: ./.coolify-config/db/logs.sql
         target: /docker-entrypoint-initdb.d/migrations/99-logs.sql
         content: |
-          \set pguser `echo "$$POSTGRES_USER"`
+          \set pguser `echo "$POSTGRES_USER"`
           \c _supabase
           create schema if not exists _analytics;
           alter schema _analytics owner to :pguser;
@@ -957,7 +957,7 @@ services:
               inputs:
                 - router.rest
               source: |-
-                parsed, err = parse_regex(.event_message, r'^(?P<time>.*): (?P<msg>.*)$$')
+                parsed, err = parse_regex(.event_message, r'^(?P<time>.*): (?P<msg>.*)$')
                 if err == null {
                     .event_message = parsed.msg
                     .timestamp = parse_timestamp!(value: parsed.time, format: "%d/%b/%Y:%H:%M:%S %z")
@@ -977,7 +977,7 @@ services:
               source: |-
                 .metadata.project = del(.project)
                 .metadata.external_id = .metadata.project
-                parsed, err = parse_regex(.event_message, r'^(?P<time>\d+:\d+:\d+\.\d+) \[(?P<level>\w+)\] (?P<msg>.*)$$')
+                parsed, err = parse_regex(.event_message, r'^(?P<time>\d+:\d+:\d+\.\d+) \[(?P<level>\w+)\] (?P<msg>.*)$')
                 if err == null {
                     .event_message = parsed.msg
                     .metadata.level = parsed.level
@@ -1039,7 +1039,7 @@ services:
                 retry_max_duration_secs: 30
                 retry_initial_backoff_secs: 1
                 headers:
-                  x-api-key: '$${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
+                  x-api-key: '${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
               uri: 'http://supabase-analytics:4000/api/logs?source_name=gotrue.logs.prod'
             logflare_realtime:
               type: 'http'
@@ -1052,7 +1052,7 @@ services:
                 retry_max_duration_secs: 30
                 retry_initial_backoff_secs: 1
                 headers:
-                  x-api-key: '$${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
+                  x-api-key: '${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
               uri: 'http://supabase-analytics:4000/api/logs?source_name=realtime.logs.prod'
             logflare_rest:
               type: 'http'
@@ -1065,7 +1065,7 @@ services:
                 retry_max_duration_secs: 30
                 retry_initial_backoff_secs: 1
                 headers:
-                  x-api-key: '$${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
+                  x-api-key: '${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
               uri: 'http://supabase-analytics:4000/api/logs?source_name=postgREST.logs.prod'
             logflare_db:
               type: 'http'
@@ -1078,7 +1078,7 @@ services:
                 retry_max_duration_secs: 30
                 retry_initial_backoff_secs: 1
                 headers:
-                  x-api-key: '$${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
+                  x-api-key: '${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
               uri: 'http://supabase-analytics:4000/api/logs?source_name=postgres.logs'
             logflare_functions:
               type: 'http'
@@ -1091,7 +1091,7 @@ services:
                 retry_max_duration_secs: 30
                 retry_initial_backoff_secs: 1
                 headers:
-                  x-api-key: '$${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
+                  x-api-key: '${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
               uri: 'http://supabase-analytics:4000/api/logs?source_name=deno-relay-logs'
             logflare_storage:
               type: 'http'
@@ -1104,7 +1104,7 @@ services:
                 retry_max_duration_secs: 30
                 retry_initial_backoff_secs: 1
                 headers:
-                  x-api-key: '$${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
+                  x-api-key: '${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
               uri: 'http://supabase-analytics:4000/api/logs?source_name=storage.logs.prod.2'
             logflare_kong:
               type: 'http'
@@ -1118,7 +1118,7 @@ services:
                 retry_max_duration_secs: 30
                 retry_initial_backoff_secs: 1
                 headers:
-                  x-api-key: '$${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
+                  x-api-key: '${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}'
               uri: 'http://supabase-analytics:4000/api/logs?source_name=cloudflare.logs.prod'
       - '/var/run/docker.sock:/var/run/docker.sock:ro'
     environment:
@@ -1454,7 +1454,7 @@ services:
             const { alg: jwtAlgorithm } = jose.decodeProtectedHeader(jwt)
 
             if (jwtAlgorithm === 'HS256') {
-              console.log(`Legacy token type detected, attempting $${jwtAlgorithm} verification.`)
+              console.log(`Legacy token type detected, attempting ${jwtAlgorithm} verification.`)
 
               return await isValidLegacyJWT(jwt)
             }
@@ -1500,8 +1500,8 @@ services:
               })
             }
 
-            const servicePath = `/home/deno/functions/$${service_name}`
-            console.error(`serving the request with $${servicePath}`)
+            const servicePath = `/home/deno/functions/${service_name}`
+            console.error(`serving the request with ${servicePath}`)
 
             const memoryLimitMb = 150
             const workerTimeoutMs = 1 * 60 * 1000
@@ -1639,7 +1639,7 @@ services:
               "db_port" => System.get_env("POSTGRES_PORT") |> String.to_integer(),
               "db_database" => System.get_env("POSTGRES_DB"),
               "require_user" => false,
-              "auth_query" => "SELECT * FROM pgbouncer.get_auth($$1)",
+              "auth_query" => "SELECT * FROM pgbouncer.get_auth($1)",
               "default_max_clients" => System.get_env("POOLER_MAX_CLIENT_CONN"),
               "default_pool_size" => System.get_env("POOLER_DEFAULT_POOL_SIZE"),
               "default_parameter_status" => %{"server_version" => version},
