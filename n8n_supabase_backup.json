@@ -1,0 +1,183 @@
+{
+  "name": "supabase backup",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -416,
+        -144
+      ],
+      "id": "e1ab871c-b3c8-4d50-872b-d4cf1111380c",
+      "name": "Schedule Trigger",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "command": "=FILE=/tmp/supabase/db-$(date +%F).dump\ndocker exec supabase-db-o0vdtvi0pfb0kxcar3tq7tbi pg_dump -U postgres -d postgres -Fc > \"$FILE\"\necho \"$FILE\""
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        -144
+      ],
+      "id": "4be74dcc-71a5-41df-b7e1-888b010ddb56",
+      "name": "Execute a command",
+      "credentials": {
+        "sshPassword": {
+          "id": "aHzQukybH28AhsRI",
+          "name": "SSH Password account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "download",
+        "path": "={{ $json.stdout }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -144
+      ],
+      "id": "793db72a-e2bd-4b5a-9a24-0eb8ee8a8c76",
+      "name": "Download a file",
+      "credentials": {
+        "sshPassword": {
+          "id": "aHzQukybH28AhsRI",
+          "name": "SSH Password account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1ISmH8xmqxv-AQDBsuqwGJdAffNET_Dnh",
+          "mode": "list",
+          "cachedResultName": "vexemcc",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1ISmH8xmqxv-AQDBsuqwGJdAffNET_Dnh"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        208,
+        -144
+      ],
+      "id": "4209ebbd-5aa6-4acf-8e36-713569205427",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "SVgPYGEXoN80rip6",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "hungnm@vetc.com.vn",
+        "subject": "Backup supabase result",
+        "message": "=<p>Đã backup Supabase thành công lúc <b>{{ $now.format('yyyy-LL-dd HH:mm:ss') }}</b></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        -144
+      ],
+      "id": "8d877b83-2b3a-462d-8e63-88e40dd04c90",
+      "name": "Send a message",
+      "webhookId": "648881e1-7f01-4f09-8c77-e50ef01c3e37",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "biLEkZ1DIPWunbzQ",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Execute a command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a command": {
+      "main": [
+        [
+          {
+            "node": "Download a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download a file": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "dcfda247-1902-46f9-ad18-40975859f08d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ea46ea9ad5e6e6edea6b67588ba7f6c59e61fddc0f0183120bf8cbd3b558538a"
+  },
+  "id": "JBmYc6XJ2RNubx2o",
+  "tags": []
+}
