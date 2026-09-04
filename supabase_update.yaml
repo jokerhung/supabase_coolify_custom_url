@@ -48,7 +48,11 @@ services:
         source: ./volumes/api/kong.yml
         target: /home/kong/temp.yml
   supabase-studio:
-    image: 'supabase/studio:2026.03.16-sha-5528817'
+    build:
+      context: .
+      dockerfile_inline: "FROM supabase/studio:2026.06.01-sha-a4334a2\nRUN find /app -type f -exec sed -i 's/gpt-5.4-nano/gpt-5.6-sol/g' {} \\; 2>/dev/null || true\n"
+    image: 'supabase-studio-patched:2026.06.01-sha-a4334a2'
+    pull_policy: build
     healthcheck:
       test:
         - CMD
@@ -88,13 +92,14 @@ services:
       - NEXT_PUBLIC_ENABLE_LOGS=true
       - NEXT_ANALYTICS_BACKEND_PROVIDER=postgres
       - 'OPENAI_API_KEY=${OPENAI_API_KEY}'
+      - 'OPENAI_BASE_URL=${OPENAI_URL:-https://api.openai.com/v1}'
       - SNIPPETS_MANAGEMENT_FOLDER=/app/snippets
       - EDGE_FUNCTIONS_MANAGEMENT_FOLDER=/app/edge-functions
     volumes:
       - './volumes/snippets:/app/snippets'
       - './volumes/functions:/app/edge-functions'
   supabase-db:
-    image: 'supabase/postgres:15.8.1.085'
+    image: 'supabase/postgres:17.6.1.168'
     healthcheck:
       test: 'pg_isready -U postgres -h 127.0.0.1'
       interval: 5s
@@ -325,7 +330,7 @@ services:
       - DISABLE_HEALTHCHECK_LOGGING=true
     command: "sh -c \"/app/bin/migrate && /app/bin/realtime eval 'Realtime.Release.seeds(Realtime.Repo)' && /app/bin/server\"\n"
   supabase-minio:
-    image: 'ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z'
+    image: 'coollabsio/minio:RELEASE.2025-10-15T17-29-55Z'
     environment:
       - 'MINIO_ROOT_USER=${SERVICE_USER_MINIO}'
       - 'MINIO_ROOT_PASSWORD=${SERVICE_PASSWORD_MINIO}'
